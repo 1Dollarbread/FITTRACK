@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, DM_Sans, JetBrains_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { WeightUnitProvider } from "@/components/WeightUnitProvider";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -42,7 +43,9 @@ export default function RootLayout({
       <body
         className={`${plusJakarta.variable} ${dmSans.variable} ${jetbrainsMono.variable} font-body bg-base text-ink antialiased`}
       >
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <WeightUnitProvider>{children}</WeightUnitProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

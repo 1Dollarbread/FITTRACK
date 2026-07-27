@@ -12,33 +12,51 @@ import { effectiveStreak, hasCompletedSessionToday } from "@/lib/streaks";
 import LoadMeter from "@/components/LoadMeter";
 import StreakBadge from "@/components/StreakBadge";
 import AppShell from "@/components/AppShell";
+import { useWeightUnit } from "@/components/WeightUnitProvider";
 
 const HERO_IMG =
   "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=1200&q=80";
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { displayWeight } = useWeightUnit();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [program, setProgram] = useState<ProgramState | null>(null);
 
   useEffect(() => {
+    let isActive = true;
     let unsubProgram: (() => void) | null = null;
-    const unsubAuth = onAuthStateChanged(auth, (user) => {
+    const unsubAuth = onAuthStateChanged(auth, async (user) => {
       if (!user) {
-        router.replace("/login");
+        if (isActive) router.replace("/login");
         return;
       }
-      getDoc(doc(db, "users", user.uid)).then((snap) => {
+      try {
+        const snap = await getDoc(doc(db, "users", user.uid));
+        if (!isActive) return;
         if (snap.exists()) setProfile(snap.data() as UserProfile);
-      });
+      } catch (err) {
+        console.error("Failed to load dashboard profile", err);
+      }
+
+      if (unsubProgram) {
+        unsubProgram();
+        unsubProgram = null;
+      }
+
       unsubProgram = onSnapshot(
         doc(db, "users", user.uid, "programState", "current"),
         (snap) => {
+          if (!isActive) return;
           if (snap.exists()) setProgram(snap.data() as ProgramState);
+        },
+        (err) => {
+          console.error("Failed to subscribe to program state", err);
         }
       );
     });
     return () => {
+      isActive = false;
       unsubAuth();
       unsubProgram?.();
     };
@@ -204,7 +222,7 @@ export default function DashboardPage() {
                     <span className="text-sm font-medium">{def?.name ?? ex.exerciseId}</span>
                     <span className="data-readout text-sm text-muted whitespace-nowrap">
                       {ex.sets} × {ex.reps}
-                      {ex.targetWeightKg > 0 ? ` @ ${ex.targetWeightKg}kg` : ""}
+                      {ex.targetWeightKg > 0 ? ` @ ${displayWeight(ex.targetWeightKg)}` : ""}
                     </span>
                   </div>
                 );

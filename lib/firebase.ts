@@ -2,18 +2,26 @@ import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
-// Populate these in .env.local — never commit real values.
-// NEXT_PUBLIC_ vars are required because this config is read client-side.
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-};
+function getFirebaseConfig() {
+  const firebaseConfig = {
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY?.trim() || undefined,
+    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN?.trim() || undefined,
+    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID?.trim() || undefined,
+    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET?.trim() || undefined,
+    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID?.trim() || undefined,
+    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID?.trim() || undefined,
+  };
 
-const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+  if (!firebaseConfig.projectId || !firebaseConfig.apiKey || !firebaseConfig.authDomain) {
+    if (process.env.NODE_ENV !== "test") {
+      console.warn("Firebase client config is incomplete. Auth and Firestore may fail until .env.local is configured.");
+    }
+  }
+
+  return firebaseConfig;
+}
+
+const app = getApps().length ? getApp() : initializeApp(getFirebaseConfig());
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);

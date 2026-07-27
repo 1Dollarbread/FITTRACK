@@ -3,6 +3,7 @@ import { UserProfile } from "@/lib/types";
 import { generateProgramWithGroq } from "@/lib/groq";
 import { initialProgramState } from "@/lib/programGenerator";
 import { verifyRequestAuth, httpErrorToResponse } from "@/lib/serverAuth";
+import { sanitizeUserProfile } from "@/lib/requestValidation";
 
 export const runtime = "nodejs";
 
@@ -16,10 +17,11 @@ export async function POST(req: NextRequest) {
     authedUid = uid;
 
     // 2. Parse and validate the body.
-    const body = (await req.json()) as { profile?: UserProfile };
-    profile = body.profile;
+    const body = (await req.json()) as { profile?: unknown };
+    const cleanedProfile = sanitizeUserProfile(body.profile, authedUid ?? undefined);
+    profile = cleanedProfile ?? undefined;
     if (!profile?.uid) {
-      return NextResponse.json({ error: "profile is required" }, { status: 400 });
+      return NextResponse.json({ error: "profile is required and must be structurally valid" }, { status: 400 });
     }
     if (profile.uid !== authedUid) {
       return NextResponse.json(

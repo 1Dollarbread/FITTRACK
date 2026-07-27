@@ -4,6 +4,7 @@ import { adjustProgramWithGroq } from "@/lib/groq";
 import { computeNextProgramState } from "@/lib/programGenerator";
 import { updateStreakOnSession, localDateKey } from "@/lib/streaks";
 import { verifyRequestAuth, httpErrorToResponse } from "@/lib/serverAuth";
+import { sanitizeUserProfile, sanitizeWorkoutSession } from "@/lib/requestValidation";
 
 export const runtime = "nodejs";
 
@@ -21,17 +22,21 @@ export async function POST(req: NextRequest) {
 
     // 2. Parse and validate.
     const body = (await req.json()) as {
-      profile?: UserProfile;
-      currentState?: ProgramState;
-      session?: WorkoutSession;
-      history?: WorkoutSession[];
+      profile?: unknown;
+      currentState?: unknown;
+      session?: unknown;
+      history?: unknown;
       /** Client local calendar day `YYYY-MM-DD` — used so timezone matches the athlete. */
       clientLocalDate?: string;
     };
-    profile = body.profile;
-    currentState = body.currentState;
-    session = body.session;
-    history = body.history ?? [];
+    const cleanedProfile = sanitizeUserProfile(body.profile, authedUid ?? undefined);
+    const cleanedSession = sanitizeWorkoutSession(body.session);
+    profile = cleanedProfile ?? undefined;
+    currentState = body.currentState as ProgramState | undefined;
+    session = cleanedSession ?? undefined;
+    history = Array.isArray(body.history)
+      ? body.history.filter((item): item is WorkoutSession => sanitizeWorkoutSession(item) != null)
+      : [];
 
     if (!profile || !currentState || !session) {
       return NextResponse.json(

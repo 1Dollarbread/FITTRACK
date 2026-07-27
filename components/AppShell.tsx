@@ -8,6 +8,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { UserProfile } from "@/lib/types";
 import ThemeToggle from "./ThemeToggle";
+import WeightUnitToggle from "./WeightUnitToggle";
 import BrandMark from "./BrandMark";
 
 const NAV = [
@@ -38,15 +39,24 @@ export default function AppShell({
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
+    let isActive = true;
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) {
-        router.replace("/login");
+        if (isActive) router.replace("/login");
         return;
       }
-      const snap = await getDoc(doc(db, "users", user.uid));
-      if (snap.exists()) setProfile(snap.data() as UserProfile);
+      try {
+        const snap = await getDoc(doc(db, "users", user.uid));
+        if (!isActive) return;
+        if (snap.exists()) setProfile(snap.data() as UserProfile);
+      } catch (err) {
+        console.error("Failed to load profile for shell", err);
+      }
     });
-    return () => unsub();
+    return () => {
+      isActive = false;
+      unsub();
+    };
   }, [router]);
 
   const displayName = profile?.displayName?.trim() || "Athlete";
@@ -92,6 +102,7 @@ export default function AppShell({
         <div className="p-4 border-t border-border space-y-3">
           <div className="flex items-center justify-between gap-2">
             <ThemeToggle />
+            <WeightUnitToggle />
           </div>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-signal text-white flex items-center justify-center font-display font-bold">
@@ -120,7 +131,10 @@ export default function AppShell({
               {title ?? "Progressive Overload"}
             </span>
           </div>
-          <ThemeToggle compact />
+          <div className="flex items-center gap-2">
+            <WeightUnitToggle compact />
+            <ThemeToggle compact />
+          </div>
         </header>
         <div className="flex-1">{children}</div>
       </div>

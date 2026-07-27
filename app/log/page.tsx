@@ -13,9 +13,11 @@ import { postJson } from "@/lib/apiClient";
 import { updateStreakOnSession, hasCompletedSessionToday, localDateKey } from "@/lib/streaks";
 import EffortInput from "@/components/EffortInput";
 import AppShell from "@/components/AppShell";
+import { useWeightUnit } from "@/components/WeightUnitProvider";
 
 export default function LogPage() {
   const router = useRouter();
+  const { displayWeight, toDisplayValue } = useWeightUnit();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [program, setProgram] = useState<ProgramState | null>(null);
   const [loggedSets, setLoggedSets] = useState<SetLog[]>([]);
@@ -280,7 +282,7 @@ export default function LogPage() {
                 </div>
                 <p className="data-readout text-xs text-muted mb-3">
                   Target: {ex.sets} × {ex.reps}
-                  {ex.targetWeightKg > 0 ? ` @ ${ex.targetWeightKg}kg` : " (bodyweight / band)"}
+                  {ex.targetWeightKg > 0 ? ` @ ${displayWeight(ex.targetWeightKg)}` : " (bodyweight / band)"}
                 </p>
 
                 <div className="flex gap-2 mb-1">
@@ -288,7 +290,7 @@ export default function LogPage() {
                     <input
                       type="number"
                       inputMode="decimal"
-                      placeholder="kg"
+                      placeholder={displayWeight(0).slice(-2) === "lb" ? "lb" : "kg"}
                       value={draft.weightKg}
                       onChange={(e) => updateDraft(activeId, "weightKg", e.target.value)}
                       className="w-20 input-field !py-2 data-readout"
@@ -323,7 +325,7 @@ export default function LogPage() {
                         className="flex items-center justify-between text-xs data-readout text-signal"
                       >
                         <span>
-                          Set {s.setNumber}: {s.weightKg > 0 ? `${s.weightKg}kg × ` : ""}
+                          Set {s.setNumber}: {s.weightKg > 0 ? `${toDisplayValue(s.weightKg)}${displayWeight(0).slice(-2) === "lb" ? "lb" : "kg"} × ` : ""}
                           {s.reps} reps
                         </span>
                         <button

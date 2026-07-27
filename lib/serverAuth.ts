@@ -12,7 +12,6 @@ import { cert, getApp, getApps, initializeApp, App } from "firebase-admin/app";
 import { getAuth as getAdminAuth } from "firebase-admin/auth";
 
 let _app: App | null = null;
-let _warnedUnverified = false;
 
 function loadServiceAccountJson(): string {
   // Prefer base64 — dotenv mangles literal \n inside JSON private keys.
@@ -82,12 +81,15 @@ export async function verifyRequestAuth(req: Request): Promise<VerifiedAuth> {
       process.env.FIREBASE_SERVICE_ACCOUNT_JSON?.trim()
   );
   if (!hasServiceAccount) {
-    if (!_warnedUnverified) {
-      console.warn(
-        "[serverAuth] No Firebase service account env set — accepting unverified ID tokens. Set FIREBASE_SERVICE_ACCOUNT_JSON_BASE64 for production."
+    const isLocalDevOverrideEnabled =
+      process.env.NODE_ENV !== "production" && process.env.ALLOW_UNVERIFIED_DEV_TOKENS === "true";
+    if (!isLocalDevOverrideEnabled) {
+      throw new HttpError(
+        500,
+        "Server auth is misconfigured. Set FIREBASE_SERVICE_ACCOUNT_JSON_BASE64 (or FIREBASE_SERVICE_ACCOUNT_JSON) before accepting requests."
       );
-      _warnedUnverified = true;
     }
+
     const payload = decodeJwtPayload(bearer);
     const uid =
       (typeof payload?.user_id === "string" && payload.user_id) ||
