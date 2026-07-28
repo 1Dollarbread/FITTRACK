@@ -72,6 +72,12 @@ export interface UserProfile {
    *  session) of the most recent day that extended the streak. Used to decide
    *  whether the next session increments or resets. */
   lastStreakDay?: string;
+  /** XP points earned from workouts and weekly completion rewards. */
+  xp?: number;
+  /** Current progression level derived from total XP. */
+  level?: number;
+  /** Week key for the weekly bonus reward so it only triggers once per week. */
+  lastWeeklyBonusWeek?: string;
   createdAt: number;
 }
 
@@ -89,10 +95,27 @@ export interface ExerciseDef {
   difficulty: ExperienceLevel;
 }
 
+export type ExerciseMediaType = "image" | "video" | "youtube";
+
+export interface ExerciseMedia {
+  type: ExerciseMediaType;
+  src: string;
+  alt: string;
+  poster?: string;
+  caption?: string;
+}
+
+export interface ExerciseFormInfo {
+  media: ExerciseMedia;
+  instructions: string;
+  details: string[];
+}
+
 export interface SetLog {
   exerciseId: string;
   setNumber: number;
   reps: number;
+  seconds?: number;
   weightKg: number;
   rpe?: number; // 1-10 reported effort, core signal for the overload engine
 }

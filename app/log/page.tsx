@@ -1,19 +1,28 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { doc, getDoc, setDoc, collection, addDoc, getDocs, orderBy, query } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { UserProfile, ProgramState, SetLog, WorkoutSession } from "@/lib/types";
 import { findExercise, swapExercise } from "@/lib/exercises";
+import { getExerciseFormInfo } from "@/lib/exerciseMedia";
 import { parseVoiceCapture, startVoiceCapture } from "@/lib/voiceParser";
 import { computeNextProgramState } from "@/lib/programGenerator";
 import { postJson } from "@/lib/apiClient";
 import { updateStreakOnSession, hasCompletedSessionToday, localDateKey } from "@/lib/streaks";
+import { awardWorkoutXp, awardWeeklyBonus, getWeekKey, type XpState } from "@/lib/xp";
 import EffortInput from "@/components/EffortInput";
 import AppShell from "@/components/AppShell";
 import { useWeightUnit } from "@/components/WeightUnitProvider";
+
+function getExerciseMediaGallery(exerciseId: string, primarySrc: string) {
+  // Gallery progression images are only shown when we have real distinct views.
+  // If an exercise has no verified second shot, only the primary image is returned.
+  return [primarySrc];
+}
 
 export default function LogPage() {
   const router = useRouter();
@@ -29,8 +38,24 @@ export default function LogPage() {
   const [setError, setSetError] = useState<Record<string, string>>({});
   const [wentWell, setWentWell] = useState("");
   const [toImprove, setToImprove] = useState("");
+  const [xpState, setXpState] = useState<XpState>({ xp: 0, level: 1 });
+  const [helpExerciseId, setHelpExerciseId] = useState<string | null>(null);
+  const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
   // Draft weight/reps per exercise, for the manual "add set" row.
-  const [drafts, setDrafts] = useState<Record<string, { weightKg: string; reps: string }>>({});
+  const [drafts, setDrafts] = useState<Record<string, { weightKg: string; reps: string; seconds: string }>>({});
+
+  useEffect(() => {
+    setSelectedMediaIndex(0);
+  }, [helpExerciseId]);
+
+  useEffect(() => {
+    if (!profile) return;
+    setXpState({
+      xp: profile.xp ?? 0,
+      level: profile.level ?? 1,
+      lastWeeklyBonusWeek: profile.lastWeeklyBonusWeek,
+    });
+  }, [profile]);
 
   useEffect(() => {
     const unsubAuth = onAuthStateChanged(auth, (user) => {
@@ -57,21 +82,36 @@ export default function LogPage() {
   const nextSession = program?.weeklyTemplate[program.currentDayIndex];
 
   function draftFor(exerciseId: string) {
-    return drafts[exerciseId] ?? { weightKg: "", reps: "" };
+    return drafts[exerciseId] ?? { weightKg: "", reps: "", seconds: "" };
   }
 
-  function updateDraft(exerciseId: string, field: "weightKg" | "reps", value: string) {
+  function updateDraft(exerciseId: string, field: "weightKg" | "reps" | "seconds", value: string) {
     setDrafts((prev) => ({ ...prev, [exerciseId]: { ...draftFor(exerciseId), [field]: value } }));
+  }
+
+  function isTimeBasedExercise(exerciseId: string) {
+    const def = findExercise(exerciseId);
+    const label = `${def?.name ?? ""} ${def?.id ?? ""}`.toLowerCase();
+    return label.includes("plank") || label.includes("hold") || label.includes("static");
   }
 
   function addManualSet(exerciseId: string) {
     const draft = draftFor(exerciseId);
-    const reps = parseInt(draft.reps, 10);
+    const repTarget = parseInt(draft.reps, 10);
+    const seconds = draft.seconds.trim() === "" ? null : parseInt(draft.seconds, 10);
     const weightKg = draft.weightKg.trim() === "" ? 0 : parseFloat(draft.weightKg);
-    if (!Number.isFinite(reps) || reps <= 0) {
+    const usesSeconds = isTimeBasedExercise(exerciseId);
+
+    if (usesSeconds) {
+      if (seconds == null || !Number.isFinite(seconds) || seconds <= 0) {
+        setSetError((prev) => ({ ...prev, [exerciseId]: "Enter a hold time greater than 0 seconds." }));
+        return;
+      }
+    } else if (!Number.isFinite(repTarget) || repTarget <= 0) {
       setSetError((prev) => ({ ...prev, [exerciseId]: "Enter a rep count greater than 0." }));
       return;
     }
+
     if (draft.weightKg.trim() !== "" && (Number.isNaN(weightKg) || weightKg < 0)) {
       setSetError((prev) => ({ ...prev, [exerciseId]: "Weight must be 0 or more." }));
       return;
@@ -85,11 +125,12 @@ export default function LogPage() {
       {
         exerciseId,
         setNumber: prev.filter((s) => s.exerciseId === exerciseId).length + 1,
-        reps,
+        reps: usesSeconds ? 0 : (Number.isNaN(repTarget) ? 0 : repTarget),
         weightKg: Number.isNaN(weightKg) ? 0 : weightKg,
+        ...(usesSeconds && seconds != null ? { seconds } : {}),
       },
     ]);
-    setDrafts((prev) => ({ ...prev, [exerciseId]: { weightKg: draft.weightKg, reps: "" } }));
+    setDrafts((prev) => ({ ...prev, [exerciseId]: { weightKg: draft.weightKg, reps: "", seconds: "" } }));
   }
 
   function removeSet(exerciseId: string, setNumber: number) {
@@ -174,6 +215,15 @@ export default function LogPage() {
       const historySnap = await getDocs(query(sessionsRef, orderBy("date", "asc")));
       const history = historySnap.docs.map((d) => d.data() as WorkoutSession);
 
+      const currentWeekKey = getWeekKey(new Date());
+      const completedThisWeek = history.filter((session) => getWeekKey(new Date(session.date)) === currentWeekKey).length;
+      const workoutXpResult = awardWorkoutXp(xpState);
+      const weeklyBonusResult =
+        completedThisWeek >= program.weeklyTemplate.length
+          ? awardWeeklyBonus(workoutXpResult, currentWeekKey)
+          : { ...workoutXpResult, lastWeeklyBonusWeek: xpState.lastWeeklyBonusWeek };
+      setXpState({ xp: weeklyBonusResult.xp, level: weeklyBonusResult.level, lastWeeklyBonusWeek: weeklyBonusResult.lastWeeklyBonusWeek });
+
       let nextState = computeNextProgramState(program, session, freshProfile, history);
       let updatedProfile = freshProfile;
       const todayKey = localDateKey(new Date());
@@ -213,7 +263,13 @@ export default function LogPage() {
         }
       }
 
-      await setDoc(doc(db, "users", user.uid), updatedProfile);
+      const profilePayload = {
+        ...updatedProfile,
+        ...(typeof weeklyBonusResult.xp === "number" ? { xp: weeklyBonusResult.xp } : {}),
+        ...(typeof weeklyBonusResult.level === "number" ? { level: weeklyBonusResult.level } : {}),
+        ...(weeklyBonusResult.lastWeeklyBonusWeek ? { lastWeeklyBonusWeek: weeklyBonusResult.lastWeeklyBonusWeek } : {}),
+      };
+      await setDoc(doc(db, "users", user.uid), profilePayload);
       await setDoc(doc(db, "users", user.uid, "programState", "current"), nextState);
       window.location.href = "/dashboard";
     } catch (err) {
@@ -265,20 +321,31 @@ export default function LogPage() {
           {nextSession.exercises.map((ex) => {
             const activeId = swaps[ex.exerciseId] ?? ex.exerciseId;
             const def = findExercise(activeId);
+            const helpInfo = getExerciseFormInfo(activeId);
             const setsForThis = loggedSets.filter((s) => s.exerciseId === activeId);
             const draft = draftFor(activeId);
             const isBodyweightOrBand = ex.targetWeightKg === 0;
 
             return (
               <div key={ex.exerciseId} className="card p-4">
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-2 gap-3">
                   <span className="font-semibold text-sm">{def?.name}</span>
-                  <button
-                    onClick={() => handleSwap(ex.exerciseId)}
-                    className="text-xs text-signal hover:text-signal-bright font-medium"
-                  >
-                    Swap
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {helpInfo ? (
+                      <button
+                        onClick={() => setHelpExerciseId(activeId)}
+                        className="text-xs text-muted hover:text-ink font-medium"
+                      >
+                        Form
+                      </button>
+                    ) : null}
+                    <button
+                      onClick={() => handleSwap(ex.exerciseId)}
+                      className="text-xs text-signal hover:text-signal-bright font-medium"
+                    >
+                      Swap
+                    </button>
+                  </div>
                 </div>
                 <p className="data-readout text-xs text-muted mb-3">
                   Target: {ex.sets} × {ex.reps}
@@ -296,14 +363,25 @@ export default function LogPage() {
                       className="w-20 input-field !py-2 data-readout"
                     />
                   )}
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    placeholder="reps"
-                    value={draft.reps}
-                    onChange={(e) => updateDraft(activeId, "reps", e.target.value)}
-                    className="w-20 input-field !py-2 data-readout"
-                  />
+                  {isTimeBasedExercise(activeId) ? (
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      placeholder="sec"
+                      value={draft.seconds}
+                      onChange={(e) => updateDraft(activeId, "seconds", e.target.value)}
+                      className="w-24 input-field !py-2 data-readout"
+                    />
+                  ) : (
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      placeholder="reps"
+                      value={draft.reps}
+                      onChange={(e) => updateDraft(activeId, "reps", e.target.value)}
+                      className="w-20 input-field !py-2 data-readout"
+                    />
+                  )}
                   <button
                     onClick={() => addManualSet(activeId)}
                     className="flex-1 btn-secondary !py-2"
@@ -326,7 +404,7 @@ export default function LogPage() {
                       >
                         <span>
                           Set {s.setNumber}: {s.weightKg > 0 ? `${toDisplayValue(s.weightKg)}${displayWeight(0).slice(-2) === "lb" ? "lb" : "kg"} × ` : ""}
-                          {s.reps} reps
+                          {s.seconds ? `${s.seconds} sec` : `${s.reps} reps`}
                         </span>
                         <button
                           onClick={() => removeSet(activeId, s.setNumber)}
@@ -347,6 +425,108 @@ export default function LogPage() {
           <p className="text-sm font-medium mb-3">Session effort</p>
           <EffortInput mode={profile.uiMode} onChange={setEffort} />
         </div>
+
+        {helpExerciseId && (() => {
+          const helpInfo = getExerciseFormInfo(helpExerciseId);
+          const helpExerciseDef = findExercise(helpExerciseId);
+          if (!helpInfo) return null;
+          const gallery = getExerciseMediaGallery(helpExerciseId, helpInfo.media.src);
+          return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <div
+                className="absolute inset-0 bg-ink/60 backdrop-blur-sm"
+                onClick={() => setHelpExerciseId(null)}
+              />
+              <div
+                className="relative z-10 w-full max-w-3xl max-h-[90vh] overflow-y-auto card p-6"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="flex items-start justify-between gap-4 mb-4">
+                  <div>
+                    <h2 className="font-display font-semibold text-xl">
+                      {helpExerciseDef?.name ?? "Exercise form"}
+                    </h2>
+                    <p className="text-xs text-muted mt-1">{helpInfo.media.caption}</p>
+                  </div>
+                  <button
+                    onClick={() => setHelpExerciseId(null)}
+                    className="text-sm text-muted hover:text-ink"
+                  >
+                    Close
+                  </button>
+                </div>
+                <div className="space-y-4">
+                  <div className="rounded-3xl overflow-hidden bg-surface/80">
+                    {helpInfo.media.type === "image" ? (
+                      <>
+                        <div className="relative w-full h-[320px]">
+                          <Image
+                            src={gallery[selectedMediaIndex] ?? helpInfo.media.src}
+                            alt={helpInfo.media.alt}
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 768px) 100vw, 768px"
+                            unoptimized
+                          />
+                        </div>
+                        {gallery.length > 1 && (
+                          <div className="flex flex-wrap gap-2 p-3 border-t border-border bg-surface/70">
+                            {gallery.map((imagePath, index) => (
+                              <button
+                                key={imagePath}
+                                type="button"
+                                onClick={() => setSelectedMediaIndex(index)}
+                                className={`w-16 h-16 overflow-hidden rounded-xl border ${selectedMediaIndex === index ? "border-signal" : "border-border"}`}
+                              >
+                                <Image
+                                  src={imagePath}
+                                  alt={`${helpInfo.media.alt} view ${index + 1}`}
+                                  width={64}
+                                  height={64}
+                                  className="object-cover w-full h-full"
+                                  unoptimized
+                                />
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    ) : helpInfo.media.type === "video" ? (
+                      <video
+                        controls
+                        poster={helpInfo.media.poster}
+                        className="w-full h-[320px] object-cover"
+                      >
+                        <source src={helpInfo.media.src} type="video/mp4" />
+                      </video>
+                    ) : (
+                      <div className="relative aspect-video">
+                        <iframe
+                          className="absolute inset-0 w-full h-full"
+                          src={helpInfo.media.src}
+                          title={`${helpExerciseDef?.name ?? "Exercise"} form video`}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-4">
+                    <p className="text-sm leading-relaxed">{helpInfo.instructions}</p>
+                    <ul className="space-y-2 text-sm">
+                      {helpInfo.details.map((detail) => (
+                        <li key={detail} className="flex gap-2">
+                          <span className="text-signal">•</span>
+                          <span>{detail}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         <div className="card p-4 mb-4">
           <h2 className="font-display font-semibold text-sm mb-1">How did it go?</h2>

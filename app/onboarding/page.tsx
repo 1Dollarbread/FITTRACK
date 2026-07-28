@@ -112,6 +112,8 @@ export default function OnboardingPage() {
       targetMuscleGroups,
       planLengthWeeks,
       subscriptionTier: "free",
+      xp: 0,
+      level: 1,
       createdAt: Date.now(),
     };
 

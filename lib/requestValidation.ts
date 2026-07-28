@@ -131,17 +131,19 @@ export function sanitizeWorkoutSession(input: unknown): WorkoutSession | null {
         .map((set) => {
           const exerciseId = toStringField(set.exerciseId);
           const setNumber = toIntField(set.setNumber, 1, 50);
-          const reps = toPositiveIntField(set.reps, 100);
+          const reps = toIntField(set.reps, 0, 100);
+          const seconds = toPositiveIntField(set.seconds, 600);
           const weightKg = typeof set.weightKg === "number" && Number.isFinite(set.weightKg) && set.weightKg >= 0 ? set.weightKg : 0;
           const rpe = set.rpe === 1 || set.rpe === 2 || set.rpe === 3 || set.rpe === 4 || set.rpe === 5 || set.rpe === 6 || set.rpe === 7 || set.rpe === 8 || set.rpe === 9 || set.rpe === 10 ? set.rpe : undefined;
-          if (!exerciseId || setNumber == null || reps == null) return null;
+          if (!exerciseId || setNumber == null || (reps == null && seconds == null)) return null;
           const exercise = findExercise(exerciseId);
           if (!exercise) return null;
           return {
             exerciseId,
             setNumber,
-            reps,
+            reps: reps ?? 0,
             weightKg,
+            ...(seconds != null ? { seconds } : {}),
             ...(rpe != null ? { rpe } : {}),
           };
         })

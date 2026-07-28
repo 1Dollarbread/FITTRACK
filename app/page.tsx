@@ -38,7 +38,7 @@ export default function LandingPage() {
             Every set you log rewrites{" "}
             <span className="text-signal">tomorrow&apos;s</span> workout.
           </h1>
-          <p className="text-muted text-base md:text-lg max-w-xl mb-8">
+          <p className="text-ink text-base md:text-lg max-w-xl mb-8">
             Tell it your goals, equipment, and maxes once. The Progressive Overload Engine adjusts
             weight, reps, and rest from what you actually reported — not a fixed spreadsheet.
           </p>
@@ -75,12 +75,12 @@ export default function LandingPage() {
             tone: "bg-deload/10 text-deload",
           },
         ].map((f) => (
-          <div key={f.title} className="card p-6">
+          <div key={f.title} className="card p-6 border border-border bg-surface text-ink">
             <div className={`w-10 h-10 rounded-full mb-4 flex items-center justify-center ${f.tone}`}>
               <span className="font-bold">•</span>
             </div>
-            <h3 className="font-display font-semibold text-base mb-2">{f.title}</h3>
-            <p className="text-muted text-sm leading-relaxed">{f.body}</p>
+            <h3 className="font-display font-semibold text-base mb-2 text-ink">{f.title}</h3>
+            <p className="text-ink text-sm leading-relaxed">{f.body}</p>
           </div>
         ))}
       </section>

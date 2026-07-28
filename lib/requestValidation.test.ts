@@ -42,3 +42,18 @@ test("sanitizeWorkoutSession strips malformed set data", () => {
   assert.equal(cleaned?.exercises[0]?.exerciseId, "bench_press");
   assert.equal(cleaned?.feedback?.wentWell, "Great");
 });
+
+test("sanitizeWorkoutSession accepts time-based set logs", () => {
+  const cleaned = sanitizeWorkoutSession({
+    id: "session-2",
+    date: Date.now(),
+    exercises: [
+      { exerciseId: "plank", setNumber: 1, reps: 0, seconds: 45, weightKg: 0 },
+    ],
+    loggedVia: "manual",
+  });
+
+  assert.ok(cleaned);
+  assert.equal(cleaned?.exercises[0]?.seconds, 45);
+  assert.equal(cleaned?.exercises[0]?.reps, 0);
+});
