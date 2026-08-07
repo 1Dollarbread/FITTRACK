@@ -164,6 +164,17 @@ export interface PrescribedSession {
   focus: string; // e.g. "Lower body — strength"
 }
 
+/** Pre-session AI Coach briefing — generated right before the athlete starts
+ *  logging, from today's prescription plus their recent session history. */
+export interface SessionBriefing {
+  /** 2-4 short, exercise-specific form cues for today's session. */
+  formCues: string[];
+  /** What to expect today, grounded in the athlete's recent performance/trend. */
+  whatToExpect: string;
+  /** What normal post-session soreness/fatigue should feel like, and what shouldn't. */
+  afterFeeling: string;
+}
+
 /** Adaptive Habit Micro-Goals — small, learned nudges rather than the full program. */
 export interface MicroGoal {
   id: string;

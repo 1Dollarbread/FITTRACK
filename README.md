@@ -43,6 +43,15 @@ Everything that makes this different from a static workout template is in
   pattern in a user's actual session history to anchor a tiny suggested habit
   to a real behavior, and only scales the goal up once a streak proves it's
   stuck (never before).
+- **`lib/groq.ts`** — the AI Coach, backed by Groq (`llama-3.3-70b-versatile`).
+  Builds the initial program (`generateProgramWithGroq`), reshapes it from
+  post-workout feedback (`adjustProgramWithGroq`), and — right before a
+  session starts — generates a short briefing (`getSessionBriefingWithGroq`):
+  form cues for today's exercises, what to expect based on the athlete's
+  recent logged performance, and what normal post-session soreness should
+  feel like. Every Groq call has a deterministic local fallback
+  (`localSessionBriefing`, the overload engine, etc.) so the app still works
+  end-to-end if `GROQ_API_KEY` is unset or the request fails.
 - **`lib/formFeedback.ts`** — intentionally a stub. See "Roadmap" below.
 
 ## Data model

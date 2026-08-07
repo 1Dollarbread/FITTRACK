@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { doc, getDoc, setDoc, collection, addDoc, getDocs, orderBy, query } from "firebase/firestore";
+import { doc, getDoc, setDoc, collection, addDoc, getDocs, orderBy, query, limit } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
-import { UserProfile, ProgramState, SetLog, WorkoutSession } from "@/lib/types";
+import { UserProfile, ProgramState, SessionBriefing, SetLog, WorkoutSession } from "@/lib/types";
 import { findExercise, swapExercise } from "@/lib/exercises";
 import { getExerciseFormInfo } from "@/lib/exerciseMedia";
 import { parseVoiceCapture, startVoiceCapture } from "@/lib/voiceParser";
@@ -39,6 +39,9 @@ export default function LogPage() {
   const [wentWell, setWentWell] = useState("");
   const [toImprove, setToImprove] = useState("");
   const [xpState, setXpState] = useState<XpState>({ xp: 0, level: 1 });
+  const [briefing, setBriefing] = useState<SessionBriefing | null>(null);
+  const [briefingLoading, setBriefingLoading] = useState(false);
+  const [briefingError, setBriefingError] = useState<string | null>(null);
   const [helpExerciseId, setHelpExerciseId] = useState<string | null>(null);
   const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
   // Draft weight/reps per exercise, for the manual "add set" row.
@@ -80,6 +83,48 @@ export default function LogPage() {
   }, [router]);
 
   const nextSession = program?.weeklyTemplate[program.currentDayIndex];
+
+  // Coach's pre-session briefing: form cues, what to expect, and how the
+  // athlete should feel after — grounded in their recent logged sessions.
+  useEffect(() => {
+    if (!profile || !program) return;
+    const session = program.weeklyTemplate[program.currentDayIndex];
+    if (!session) return;
+    const user = auth.currentUser;
+    if (!user) return;
+
+    let cancelled = false;
+    setBriefingLoading(true);
+    setBriefingError(null);
+
+    (async () => {
+      try {
+        const sessionsRef = collection(db, "users", user.uid, "sessions");
+        const historySnap = await getDocs(query(sessionsRef, orderBy("date", "desc"), limit(8)));
+        const recentHistory = historySnap.docs.map((d) => d.data() as WorkoutSession).reverse();
+
+        const data = await postJson<{ briefing: SessionBriefing }>("/api/session-briefing", {
+          profile,
+          session,
+          history: recentHistory,
+          isDeloadWeek: program.isDeloadWeek,
+          deloadReason: program.deloadReason,
+        });
+        if (!cancelled) setBriefing(data.briefing);
+      } catch (err) {
+        console.error("Failed to load session briefing:", err);
+        if (!cancelled) {
+          setBriefingError("Coach briefing is unavailable right now — your session targets below are still accurate.");
+        }
+      } finally {
+        if (!cancelled) setBriefingLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [profile, program]);
 
   function draftFor(exerciseId: string) {
     return drafts[exerciseId] ?? { weightKg: "", reps: "", seconds: "" };
@@ -306,6 +351,37 @@ export default function LogPage() {
         </button>
         <h1 className="font-display font-bold text-2xl mb-1">{nextSession.focus}</h1>
         <p className="text-muted text-sm mb-6">Log your sets</p>
+
+        {(briefingLoading || briefingError || briefing) && (
+          <div className="card p-4 mb-4 border-signal/30 bg-signal/5">
+            <h2 className="font-display font-semibold text-sm mb-3 text-signal">Coach briefing</h2>
+            {briefingLoading && <p className="text-xs text-muted">Putting today's briefing together...</p>}
+            {!briefingLoading && briefingError && <p className="text-xs text-muted">{briefingError}</p>}
+            {!briefingLoading && briefing && (
+              <div className="flex flex-col gap-3 text-sm">
+                <div>
+                  <p className="text-xs font-medium text-muted mb-1">Form focus</p>
+                  <ul className="flex flex-col gap-1">
+                    {briefing.formCues.map((cue, i) => (
+                      <li key={i} className="flex gap-2">
+                        <span className="text-signal">•</span>
+                        <span>{cue}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-muted mb-1">What to expect</p>
+                  <p>{briefing.whatToExpect}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-muted mb-1">How you should feel after</p>
+                  <p>{briefing.afterFeeling}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         <button
           onClick={handleVoiceCapture}
