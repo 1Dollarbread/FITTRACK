@@ -1,4 +1,4 @@
-import { ExerciseDef, Equipment, ExperienceLevel, Injury, MuscleGroup, PlanLengthWeeks, PrimaryGoal, UserProfile, WorkoutSession } from "./types";
+import { ExerciseDef, Equipment, ExperienceLevel, Injury, MuscleGroup, PlanLengthWeeks, PrescribedExercise, PrescribedSession, PrimaryGoal, UserProfile, WorkoutSession } from "./types";
 import { EXERCISES, findExercise } from "./exercises";
 
 const VALID_GOALS: PrimaryGoal[] = ["strength", "hypertrophy", "fat_loss", "endurance", "general_health"];
@@ -114,6 +114,39 @@ export function sanitizeUserProfile(input: unknown, expectedUid?: string): UserP
     subscriptionTier,
     createdAt,
   };
+}
+
+function sanitizePrescribedExercise(input: unknown): PrescribedExercise | null {
+  if (!isRecord(input)) return null;
+  const exerciseId = toStringField(input.exerciseId);
+  if (!exerciseId || !findExercise(exerciseId)) return null;
+
+  const sets = toIntField(input.sets, 1, 8);
+  const reps = toIntField(input.reps, 1, 50);
+  const restSeconds = toIntField(input.restSeconds, 15, 300);
+  const targetWeightKg =
+    typeof input.targetWeightKg === "number" && Number.isFinite(input.targetWeightKg) && input.targetWeightKg >= 0
+      ? input.targetWeightKg
+      : null;
+  if (sets == null || reps == null || restSeconds == null || targetWeightKg == null) return null;
+
+  return { exerciseId, sets, reps, targetWeightKg, restSeconds };
+}
+
+/** Validates a single prescribed training day, e.g. `program.weeklyTemplate[currentDayIndex]`. */
+export function sanitizePrescribedSession(input: unknown): PrescribedSession | null {
+  if (!isRecord(input)) return null;
+  const focus = toStringField(input.focus);
+  if (!focus) return null;
+
+  const exercises = Array.isArray(input.exercises)
+    ? input.exercises
+        .map(sanitizePrescribedExercise)
+        .filter((e): e is PrescribedExercise => e != null)
+    : [];
+  if (exercises.length === 0) return null;
+
+  return { focus, exercises };
 }
 
 export function sanitizeWorkoutSession(input: unknown): WorkoutSession | null {

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { sanitizeUserProfile, sanitizeWorkoutSession } from "./requestValidation.ts";
+import { sanitizePrescribedSession, sanitizeUserProfile, sanitizeWorkoutSession } from "./requestValidation.ts";
 
 test("sanitizeUserProfile rejects malformed and out-of-range data", () => {
   const invalid = sanitizeUserProfile(
@@ -56,4 +56,30 @@ test("sanitizeWorkoutSession accepts time-based set logs", () => {
   assert.ok(cleaned);
   assert.equal(cleaned?.exercises[0]?.seconds, 45);
   assert.equal(cleaned?.exercises[0]?.reps, 0);
+});
+
+test("sanitizePrescribedSession strips unknown exercises and rejects an empty result", () => {
+  const cleaned = sanitizePrescribedSession({
+    focus: "Push day",
+    exercises: [
+      { exerciseId: "bench_press", sets: 4, reps: 8, targetWeightKg: 60, restSeconds: 90 },
+      { exerciseId: "not_a_real_exercise", sets: 3, reps: 10, targetWeightKg: 20, restSeconds: 60 },
+    ],
+  });
+
+  assert.equal(cleaned?.exercises.length, 1);
+  assert.equal(cleaned?.exercises[0]?.exerciseId, "bench_press");
+
+  const empty = sanitizePrescribedSession({
+    focus: "Push day",
+    exercises: [{ exerciseId: "not_a_real_exercise", sets: 3, reps: 10, targetWeightKg: 20, restSeconds: 60 }],
+  });
+  assert.equal(empty, null);
+});
+
+test("sanitizePrescribedSession rejects a missing focus", () => {
+  const cleaned = sanitizePrescribedSession({
+    exercises: [{ exerciseId: "bench_press", sets: 4, reps: 8, targetWeightKg: 60, restSeconds: 90 }],
+  });
+  assert.equal(cleaned, null);
 });
