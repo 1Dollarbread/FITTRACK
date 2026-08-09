@@ -138,7 +138,17 @@ function repsForExercise(ex: ExerciseDef, profile: UserProfile, defaultReps: num
   if (ex.id === "situp" || ex.id === "bicycle_crunch" || ex.id === "hanging_leg_raise") {
     if (profile.maxSitups && profile.maxSitups > 0) return clamp(profile.maxSitups * 0.55);
   }
+  if (ex.id === "sprint_60m" || ex.id === "sprint_100m") return 1; // each rep is one sprint; sets carries the sprint count
+  if (ex.id === "mile_run") return 1; // always exactly one mile
+  if (ex.id === "long_distance_run") return 3; // miles; mid-range of the 2-5 advanced-only band
+  if (ex.id === "cardio_choice") return 20; // minutes
   return defaultReps;
+}
+
+/** Running/cardio work is a single continuous bout, not multiple training sets. */
+function setsForExercise(ex: ExerciseDef, defaultSets: number): number {
+  if (ex.id === "mile_run" || ex.id === "long_distance_run" || ex.id === "cardio_choice") return 1;
+  return defaultSets;
 }
 
 /**

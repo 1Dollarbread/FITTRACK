@@ -1,8 +1,8 @@
 import { ExerciseFormInfo, ExerciseMedia } from "./types";
 
-// YouTube video links (all under 2 minutes) for exercise form guidance
+// YouTube video links for exercise form guidance
 const youtubeVideo = (videoId: string, alt: string): ExerciseMedia => ({
-  type: "video",
+  type: "youtube",
   src: `https://www.youtube.com/embed/${videoId}?controls=1&modestbranding=1`,
   alt,
   caption: "Form demonstration video",
@@ -179,11 +179,11 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
     "pike_pushup",
     "sposDXWEB0A",
     "Pike Push-Up form video",
-    "Set up in a pike position with hips high, hands shoulder-width apart, and lower the crown of your head toward the floor between your hands. Press back up through your shoulders.",
+    "Start in a pike position with hips high, lower your head toward the floor between your hands, then press back up.",
     [
-      "Keep your hips high to shift load onto the shoulders.",
-      "Lower under control rather than dropping quickly.",
+      "Keep your hips high throughout the movement.",
       "Keep your elbows tracking back, not flared wide.",
+      "Move through a controlled, full range of motion.",
     ]
   ),
   band_overhead_press: info(
