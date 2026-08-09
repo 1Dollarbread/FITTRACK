@@ -1,6 +1,7 @@
-import { EXERCISES, exerciseCatalogForPrompt, findExercise } from "./exercises";
+import { EXERCISES, exerciseCatalogForPrompt, experienceRank, findExercise } from "./exercises";
 import { getExerciseFormInfo } from "./exerciseMedia";
 import {
+  ExperienceLevel,
   PrescribedExercise,
   PrescribedSession,
   ProgramState,
@@ -103,11 +104,17 @@ function extractJson(raw: string): unknown {
   }
 }
 
-function sanitizeExercise(raw: unknown): PrescribedExercise | null {
+function sanitizeExercise(raw: unknown, experienceLevel: ExperienceLevel): PrescribedExercise | null {
   if (!raw || typeof raw !== "object") return null;
   const e = raw as Record<string, unknown>;
   const exerciseId = String(e.exerciseId ?? "");
-  if (!findExercise(exerciseId)) return null;
+  const def = findExercise(exerciseId);
+  if (!def) return null;
+  // Hard gate: Groq is told not to prescribe e.g. multi-mile runs below the
+  // required experience level, but never trust the LLM output alone here.
+  if (def.requiresExperience && experienceRank(experienceLevel) < experienceRank(def.requiresExperience)) {
+    return null;
+  }
   const sets = Number(e.sets);
   const reps = Number(e.reps);
   const targetWeightKg = Number(e.targetWeightKg ?? 0);
@@ -122,7 +129,11 @@ function sanitizeExercise(raw: unknown): PrescribedExercise | null {
   };
 }
 
-function sanitizeWeeklyTemplate(raw: unknown, fallbackDays: number): PrescribedSession[] | null {
+function sanitizeWeeklyTemplate(
+  raw: unknown,
+  fallbackDays: number,
+  experienceLevel: ExperienceLevel
+): PrescribedSession[] | null {
   if (!raw || typeof raw !== "object") return null;
   const obj = raw as Record<string, unknown>;
   const sessions = Array.isArray(obj.weeklyTemplate)
@@ -138,7 +149,7 @@ function sanitizeWeeklyTemplate(raw: unknown, fallbackDays: number): PrescribedS
     const s = session as Record<string, unknown>;
     const exercisesRaw = Array.isArray(s.exercises) ? s.exercises : [];
     const exercises = exercisesRaw
-      .map(sanitizeExercise)
+      .map((exercise) => sanitizeExercise(exercise, experienceLevel))
       .filter((e): e is PrescribedExercise => e != null);
     if (exercises.length === 0) continue;
     cleaned.push({
@@ -204,6 +215,8 @@ Rules:
 - Respect equipment and injuries first; avoid exercises that aggravate reported pain or conflicts.
 - Use maxPushups/maxPullups/maxSitups to set working-set reps for pushups, pullups/chinups, and situps/core (about 50-70% of max per set), but if any benchmark is unknown, avoid inventing a value and use a conservative default.
 - Emphasize targetMuscleGroups and focusAreas with accessory work when session length allows.
+- For cardio (pattern "cardio"), pick whatever fits the athlete best: brisk_walk, cardio_choice_20min (20 minutes, athlete's own choice of activity), sprint_60m / sprint_100m (sprint intervals), or mile_run_1 (a single 1-mile run). Only prescribe mile_run_2, mile_run_3, mile_run_4, or mile_run_5 (runs longer than 1 mile) when experienceLevel is exactly "advanced" — never for new/beginner/intermediate athletes, regardless of goals.
+- For sprint_60m/sprint_100m use sets:1, reps: the number of sprint repeats (e.g. 6), restSeconds 90-150 for full recovery between sprints. For mile_run_* and cardio_choice_20min use sets:1, reps:1 — the distance/duration is already in the exercise name.
 - Build daysPerWeek sessions, each with a short focus string and 3-8 exercises.
 - If the athlete has onboarding answers about deadlines, success, preferred time, training history, activities, or enjoyment, weave those into the plan as explicit emphasis without losing the base goals.
 - Prefer a slightly fuller template when the athlete has 4+ training days, aiming for 6-8 sessions when the user has 6 days per week and at least 6 sessions for a 6-day split.
@@ -220,7 +233,7 @@ Rules:
       { type: "json_object" }
     );
     const parsed = extractJson(content);
-    const template = sanitizeWeeklyTemplate(parsed, profile.daysPerWeek);
+    const template = sanitizeWeeklyTemplate(parsed, profile.daysPerWeek, profile.experienceLevel);
     if (!template) return fallback;
 
     return {
@@ -357,6 +370,7 @@ Rules:
 - Use ONLY exercise ids from the catalog.
 - Keep the same number of training days as the current template.
 - Apply feedback concretely (e.g. "shoulders too sore" → swap/reduce shoulder volume; "pullups felt easy" → add reps or a harder pull variation).
+- Cardio options are brisk_walk, cardio_choice_20min, sprint_60m, sprint_100m, and mile_run_1 through mile_run_5. Only use mile_run_2/3/4/5 (more than 1 mile) if profile.experienceLevel is exactly "advanced" — e.g. if a non-advanced athlete says running felt easy, progress them toward mile_run_1 or a sprint variant instead, never a longer mile_run.
 - Preserve progressive structure; do not wipe the whole plan unless feedback demands it.
 - Advance currentDayIndex to the next day (wrap to 0).
 - Respond with JSON: {"weeklyTemplate":[...],"coachNote":"short string explaining changes","isDeloadWeek":false,"deloadReason":null}`,
@@ -406,7 +420,7 @@ Rules:
     ]);
 
     const parsed = extractJson(content) as Record<string, unknown>;
-    const template = sanitizeWeeklyTemplate(parsed, currentState.weeklyTemplate.length);
+    const template = sanitizeWeeklyTemplate(parsed, currentState.weeklyTemplate.length, profile.experienceLevel);
     if (!template) return localNext;
 
     const nextDayIndex = (currentState.currentDayIndex + 1) % template.length;

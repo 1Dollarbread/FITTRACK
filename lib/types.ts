@@ -99,6 +99,10 @@ export interface ExerciseDef {
   /** Other exercise ids this can be swapped for/from — the Equipment Swap Engine reads this. */
   swapGroup: string;
   difficulty: ExperienceLevel;
+  /** Minimum athlete experience level required before this can be prescribed at all
+   *  (distinct from `difficulty`, which only ranks preference). Used to hard-gate
+   *  higher-risk/higher-demand movements like multi-mile runs. */
+  requiresExperience?: ExperienceLevel;
 }
 
 export type ExerciseMediaType = "image" | "video" | "youtube";
