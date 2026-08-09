@@ -104,10 +104,11 @@ function extractJson(raw: string): unknown {
   }
 }
 
+/** Distance running is capped at 1 mile unless the athlete is an advanced runner. */
 function sanitizeExercise(raw: unknown, experienceLevel: ExperienceLevel): PrescribedExercise | null {
   if (!raw || typeof raw !== "object") return null;
   const e = raw as Record<string, unknown>;
-  const exerciseId = String(e.exerciseId ?? "");
+  let exerciseId = String(e.exerciseId ?? "");
   const def = findExercise(exerciseId);
   if (!def) return null;
   // Hard gate: Groq is told not to prescribe e.g. multi-mile runs below the
@@ -115,12 +116,6 @@ function sanitizeExercise(raw: unknown, experienceLevel: ExperienceLevel): Presc
   if (def.requiresExperience && experienceRank(experienceLevel) < experienceRank(def.requiresExperience)) {
     return null;
   }
-/** Distance running is capped at 1 mile unless the athlete is an advanced runner. */
-function sanitizeExercise(raw: unknown, experienceLevel: ExperienceLevel): PrescribedExercise | null {
-  if (!raw || typeof raw !== "object") return null;
-  const e = raw as Record<string, unknown>;
-  let exerciseId = String(e.exerciseId ?? "");
-  if (!findExercise(exerciseId)) return null;
   if (exerciseId === "long_distance_run" && experienceLevel !== "advanced") {
     exerciseId = "mile_run";
   }
@@ -165,7 +160,6 @@ function sanitizeWeeklyTemplate(
     const exercisesRaw = Array.isArray(s.exercises) ? s.exercises : [];
     const exercises = exercisesRaw
       .map((exercise) => sanitizeExercise(exercise, experienceLevel))
-      .map((item) => sanitizeExercise(item, experienceLevel))
       .filter((e): e is PrescribedExercise => e != null);
     if (exercises.length === 0) continue;
     cleaned.push({
