@@ -1,4 +1,4 @@
-import { ExerciseDef, Equipment, MuscleGroup } from "./types";
+import { ExerciseDef, Equipment, ExperienceLevel, MuscleGroup } from "./types";
 
 // swapGroup is the key idea here: any two exercises sharing a swapGroup train the
 // same movement pattern + primary muscle closely enough to substitute mid-program
@@ -66,6 +66,14 @@ export const EXERCISES: ExerciseDef[] = [
   // ---- Carry / cardio ----
   { id: "farmers_carry", name: "Farmer's Carry", muscleGroup: "forearms", secondaryMuscles: ["core"], pattern: "carry", isAccessory: true, requiredEquipment: ["dumbbells", "full_gym"], swapGroup: "loaded_carry", difficulty: "beginner" },
   { id: "brisk_walk", name: "Brisk Walk", muscleGroup: "calves", pattern: "cardio", isAccessory: false, requiredEquipment: ["bodyweight_only"], swapGroup: "steady_cardio", difficulty: "new" },
+  { id: "cardio_choice_20min", name: "20-Minute Cardio (Your Choice)", muscleGroup: "calves", pattern: "cardio", isAccessory: false, requiredEquipment: ["bodyweight_only"], swapGroup: "steady_cardio", difficulty: "new" },
+  { id: "sprint_60m", name: "60m Sprint", muscleGroup: "calves", pattern: "cardio", isAccessory: false, requiredEquipment: ["bodyweight_only"], swapGroup: "sprint_intervals", difficulty: "beginner" },
+  { id: "sprint_100m", name: "100m Sprint", muscleGroup: "calves", pattern: "cardio", isAccessory: false, requiredEquipment: ["bodyweight_only"], swapGroup: "sprint_intervals", difficulty: "intermediate" },
+  { id: "mile_run_1", name: "1 Mile Run", muscleGroup: "calves", pattern: "cardio", isAccessory: false, requiredEquipment: ["bodyweight_only"], swapGroup: "distance_run", difficulty: "beginner" },
+  { id: "mile_run_2", name: "2 Mile Run", muscleGroup: "calves", pattern: "cardio", isAccessory: false, requiredEquipment: ["bodyweight_only"], swapGroup: "distance_run", difficulty: "advanced", requiresExperience: "advanced" },
+  { id: "mile_run_3", name: "3 Mile Run", muscleGroup: "calves", pattern: "cardio", isAccessory: false, requiredEquipment: ["bodyweight_only"], swapGroup: "distance_run", difficulty: "advanced", requiresExperience: "advanced" },
+  { id: "mile_run_4", name: "4 Mile Run", muscleGroup: "calves", pattern: "cardio", isAccessory: false, requiredEquipment: ["bodyweight_only"], swapGroup: "distance_run", difficulty: "advanced", requiresExperience: "advanced" },
+  { id: "mile_run_5", name: "5 Mile Run", muscleGroup: "calves", pattern: "cardio", isAccessory: false, requiredEquipment: ["bodyweight_only"], swapGroup: "distance_run", difficulty: "advanced", requiresExperience: "advanced" },
 
   // ---- Running / cardio (Groq-selectable conditioning work) ----
   // reps semantics for this group: sprint_60m/sprint_100m = 1 (each rep is one sprint;
@@ -121,16 +129,30 @@ export function withImplicitBodyweight(equipment: Equipment[]): Equipment[] {
   return equipment.includes("bodyweight_only") ? equipment : [...equipment, "bodyweight_only"];
 }
 
+/** Shared new < beginner < intermediate < advanced ordering for difficulty/experience comparisons. */
+export function experienceRank(level: ExperienceLevel): number {
+  return { new: 0, beginner: 1, intermediate: 2, advanced: 3 }[level];
+}
+
+function meetsExperienceRequirement(exercise: ExerciseDef, experienceLevel?: ExperienceLevel): boolean {
+  if (!exercise.requiresExperience) return true;
+  if (!experienceLevel) return false;
+  return experienceRank(experienceLevel) >= experienceRank(exercise.requiresExperience);
+}
+
 /**
  * Equipment Swap Engine.
  * Given an exercise the user can't currently perform (or taps "Swap" on),
  * return the best available substitute: same swapGroup, equipment the user
  * actually has, closest difficulty to the original so the prescribed load
- * logic doesn't have to be recalculated from scratch.
+ * logic doesn't have to be recalculated from scratch. Candidates gated by
+ * `requiresExperience` (e.g. multi-mile runs) are excluded unless the
+ * athlete's experience level clears that bar.
  */
 export function swapExercise(
   currentExerciseId: string,
-  availableEquipment: Equipment[]
+  availableEquipment: Equipment[],
+  experienceLevel?: ExperienceLevel
 ): ExerciseDef | null {
   const current = findExercise(currentExerciseId);
   if (!current) return null;
@@ -140,23 +162,18 @@ export function swapExercise(
     (e) =>
       e.swapGroup === current.swapGroup &&
       e.id !== current.id &&
-      e.requiredEquipment.some((eq) => equipment.includes(eq))
+      e.requiredEquipment.some((eq) => equipment.includes(eq)) &&
+      meetsExperienceRequirement(e, experienceLevel)
   );
 
   if (candidates.length === 0) return null;
 
-  const difficultyRank: Record<string, number> = {
-    new: 0,
-    beginner: 1,
-    intermediate: 2,
-    advanced: 3,
-  };
-  const currentRank = difficultyRank[current.difficulty];
+  const currentRank = experienceRank(current.difficulty);
 
   candidates.sort(
     (a, b) =>
-      Math.abs(difficultyRank[a.difficulty] - currentRank) -
-      Math.abs(difficultyRank[b.difficulty] - currentRank)
+      Math.abs(experienceRank(a.difficulty) - currentRank) -
+      Math.abs(experienceRank(b.difficulty) - currentRank)
   );
 
   return candidates[0];

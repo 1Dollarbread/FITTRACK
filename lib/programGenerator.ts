@@ -81,6 +81,7 @@ function pickExerciseForPattern(
   const injuredParts = profile.injuries
     .filter((i) => i.severity === "avoid_loading")
     .map((i) => i.bodyPart.toLowerCase());
+  const userRank = difficultyRank(profile.experienceLevel);
 
   const candidates = EXERCISES.filter(
     (e) =>
@@ -91,12 +92,12 @@ function pickExerciseForPattern(
         (part) =>
           e.muscleGroup.toLowerCase().includes(part) ||
           (e.secondaryMuscles ?? []).some((m) => m.toLowerCase().includes(part))
-      )
+      ) &&
+      (!e.requiresExperience || userRank >= difficultyRank(e.requiresExperience))
   );
 
   if (candidates.length === 0) return undefined;
 
-  const userRank = difficultyRank(profile.experienceLevel);
   candidates.sort(
     (a, b) =>
       Math.abs(difficultyRank(a.difficulty) - userRank) -
@@ -151,6 +152,18 @@ function setsForExercise(ex: ExerciseDef, defaultSets: number): number {
 }
 
 /**
+ * Cardio-pattern movements (sprints, distance runs, timed cardio) aren't
+ * meaningfully described by goal-based strength sets/reps — the distance or
+ * duration already lives in the exercise name itself. Sprint intervals get
+ * repeated efforts with full recovery; steady-state/distance cardio is a
+ * single continuous effort.
+ */
+function cardioPrescriptionFor(ex: ExerciseDef): { sets: number; reps: number; restSeconds: number } {
+  if (ex.swapGroup === "sprint_intervals") return { sets: 1, reps: 6, restSeconds: 120 };
+  return { sets: 1, reps: 1, restSeconds: 60 };
+}
+
+/**
  * Builds the full weekly template right after onboarding.
  * Compound lifts cover the day's assigned movement patterns; remaining slots
  * (based on session length) are filled with accessory/isolation work for the
@@ -186,12 +199,13 @@ export function generateWeeklyProgram(profile: UserProfile): PrescribedSession[]
       const ex = pickExerciseForPattern(pattern, profile, equipment, usedIds);
       if (!ex) continue;
       usedIds.add(ex.id);
+      const cardio = ex.pattern === "cardio" ? cardioPrescriptionFor(ex) : null;
       compoundExercises.push({
         exerciseId: ex.id,
-        sets: setsForExercise(ex, blended.sets),
-        reps: repsForExercise(ex, profile, blended.reps),
+        sets: cardio?.sets ?? blended.sets,
+        reps: cardio?.reps ?? repsForExercise(ex, profile, blended.reps),
         targetWeightKg: targetWeightFor(ex, bodyweight, blended.loadPctOfBodyweight),
-        restSeconds: blended.restSeconds,
+        restSeconds: cardio?.restSeconds ?? blended.restSeconds,
       });
     }
 

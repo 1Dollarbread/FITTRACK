@@ -255,7 +255,7 @@ export default function LogPage() {
 
   function handleSwap(exerciseId: string) {
     if (!profile) return;
-    const swapped = swapExercise(swaps[exerciseId] ?? exerciseId, profile.equipment);
+    const swapped = swapExercise(swaps[exerciseId] ?? exerciseId, profile.equipment, profile.experienceLevel);
     if (swapped) setSwaps((prev) => ({ ...prev, [exerciseId]: swapped.id }));
   }
 
