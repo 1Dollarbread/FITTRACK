@@ -1,8 +1,8 @@
 import { ExerciseFormInfo, ExerciseMedia } from "./types";
 
-// YouTube video links (all under 2 minutes) for exercise form guidance
+// YouTube video links for exercise form guidance
 const youtubeVideo = (videoId: string, alt: string): ExerciseMedia => ({
-  type: "video",
+  type: "youtube",
   src: `https://www.youtube.com/embed/${videoId}?controls=1&modestbranding=1`,
   alt,
   caption: "Form demonstration video",
@@ -23,7 +23,7 @@ const info = (
 export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   back_squat: info(
     "back_squat",
-    "dxaL-gFu9Bw",
+    "rrJIyZGlK8c",
     "Back Squat form video",
     "Stand with feet shoulder-width apart, keep your chest tall, and sit back into your hips. Push through your heels and keep your knees tracking your toes.",
     [
@@ -34,7 +34,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   goblet_squat: info(
     "goblet_squat",
-    "MfeGvzKJXwI",
+    "7-80HiXX1K8",
     "Goblet Squat form video",
     "Hold the weight close to your chest, keep your elbows between your knees, and squat down with a straight back. Use your legs to power back up.",
     [
@@ -45,7 +45,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   bodyweight_squat: info(
     "bodyweight_squat",
-    "aJfW0oCuIpU",
+    "n_xLyzPEX7A",
     "Bodyweight Squat form video",
     "Stand with feet shoulder-width apart, push your hips back, and lower until your thighs are at least parallel. Keep your spine neutral and drive up through your heels.",
     [
@@ -56,7 +56,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   leg_press: info(
     "leg_press",
-    "EQ-j-s3xESo",
+    "SAn_VatT1L8",
     "Leg Press form video",
     "Place your feet hip-width on the platform, lower until your knees are at about 90 degrees, then press back up without locking your knees.",
     [
@@ -67,7 +67,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   band_squat: info(
     "band_squat",
-    "UjKM3TM-1Hs",
+    "Y24Qp2C5mX0",
     "Band Resisted Squat form video",
     "Step on a band and hold the handles at chest height. Squat with a tall torso, keeping the band under tension throughout the set.",
     [
@@ -78,7 +78,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   deadlift: info(
     "deadlift",
-    "VGJc1F8-C6E",
+    "Y59xLuw7ElQ",
     "Barbell Deadlift form video",
     "Stand with feet under the bar, hinge at the hips, and keep the bar close to your legs. Pull with a flat back, then lock your hips and shoulders at the top.",
     [
@@ -89,7 +89,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   dumbbell_rdl: info(
     "dumbbell_rdl",
-    "I9Fd_n_VJds",
+    "JCXUYuzw0Gg",
     "Dumbbell RDL form video",
     "Hold dumbbells by your sides, hinge from the hips, and lower until you feel a stretch in your hamstrings. Keep your spine flat and shoulders back.",
     [
@@ -100,7 +100,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   band_good_morning: info(
     "band_good_morning",
-    "R6_VGOV_D_8",
+    "G3L51rRlsR0",
     "Band Good Morning form video",
     "Place the band across your upper back, hinge from the hips, and keep a neutral spine as you lower your torso. Drive your hips forward to return.",
     [
@@ -111,7 +111,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   bodyweight_good_morning: info(
     "bodyweight_good_morning",
-    "P-rvZMU0ZuI",
+    "2K4mEwJ4W1s",
     "Bodyweight Good Morning form video",
     "Keep a soft bend in your knees, hinge from the hips, and lower your torso until you feel tension in your hamstrings. Return by driving your hips forward.",
     [
@@ -122,7 +122,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   bench_press: info(
     "bench_press",
-    "yFjLfcWzd-w",
+    "gRVjAtPip0Y",
     "Barbell Bench Press form video",
     "Lie flat on the bench, plant your feet, and lower the bar to your chest with elbows at about 45 degrees. Press up explosively while keeping your shoulders stable.",
     [
@@ -133,7 +133,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   dumbbell_press: info(
     "dumbbell_press",
-    "HUqiKBxhAOE",
+    "VmB1G1K7v94",
     "Dumbbell Bench Press form video",
     "Press dumbbells from chest level with wrists stacked over elbows. Keep your shoulders down and drive the weights up in a controlled arc.",
     [
@@ -155,7 +155,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   band_press: info(
     "band_press",
-    "xgfnxzJLYgQ",
+    "11Gk329G5M8",
     "Band Chest Press form video",
     "Anchor the band behind you, press forward with your hands at chest height, and keep your shoulder blades stable.",
     [
@@ -166,7 +166,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   overhead_press: info(
     "overhead_press",
-    "2-_LInHmyFc",
+    "tK7rzJwvOJA",
     "Overhead Press form video",
     "Press the barbell or dumbbells overhead in a straight line, keeping your core tight and ribs down. Lock out at the top without overarching your lower back.",
     [
@@ -175,9 +175,20 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
       "Drive through your mid-foot for a stable base.",
     ]
   ),
+  pike_pushup: info(
+    "pike_pushup",
+    "sposDXWEB0A",
+    "Pike Push-Up form video",
+    "Start in a pike position with hips high, lower your head toward the floor between your hands, then press back up.",
+    [
+      "Keep your hips high throughout the movement.",
+      "Keep your elbows tracking back, not flared wide.",
+      "Move through a controlled, full range of motion.",
+    ]
+  ),
   band_overhead_press: info(
     "band_overhead_press",
-    "kG5yzK4BkAU",
+    "q2O-K0-aK54",
     "Band Overhead Press form video",
     "Stand on the band and press it overhead, keeping your core braced and elbows under your wrists.",
     [
@@ -188,7 +199,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   pullup: info(
     "pullup",
-    "3TB_4b-J-Xw",
+    "eGo4IYlbE5g",
     "Pull-Up form video",
     "Hang from the bar with a shoulder-width grip, pull your chest toward the bar, then lower with control.",
     [
@@ -199,7 +210,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   lat_pulldown: info(
     "lat_pulldown",
-    "I9qmEQfH3d4",
+    "JGeRYIZdojU",
     "Lat Pulldown form video",
     "Sit tall, grip the bar, and pull it to your upper chest while keeping your elbows pointed down.",
     [
@@ -210,7 +221,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   band_pulldown: info(
     "band_pulldown",
-    "QG1t_7rxIHE",
+    "yX3Y80yH2gU",
     "Band Pulldown form video",
     "Anchor the band overhead, pull down to your upper chest, and keep your elbows driving down.",
     [
@@ -221,7 +232,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   barbell_row: info(
     "barbell_row",
-    "W-Up50-sM5E",
+    "9efgcAjQe7E",
     "Barbell Row form video",
     "Hinge from the hips, keep your back flat, and pull the bar toward your lower ribs. Lower with control.",
     [
@@ -232,7 +243,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   dumbbell_row: info(
     "dumbbell_row",
-    "pYcpY20QKrI",
+    "dFzUjzfih78",
     "Dumbbell Row form video",
     "Support one hand on a bench, keep your back flat, and row the dumbbell to your hip.",
     [
@@ -243,7 +254,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   band_row: info(
     "band_row",
-    "KhT2E4pDqX0",
+    "88Kz_HkU1f0",
     "Band Row form video",
     "Anchor the band in front of you, sit or stand tall, and row the handles into your ribs while keeping your core braced.",
     [
@@ -254,7 +265,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   bodyweight_row: info(
     "bodyweight_row",
-    "OiNVEGT-n_A",
+    "hXTc1mDnC5M",
     "Table/Bar Inverted Row form video",
     "Keep a straight body line, pull your chest up to the bar or tabletop, and lower slowly.",
     [
@@ -265,7 +276,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   straight_arm_pulldown: info(
     "straight_arm_pulldown",
-    "y59gKJPJuHw",
+    "G2mXm8SUpDk",
     "Straight-Arm Pulldown form video",
     "Keep arms mostly straight, hinge from the hips, and pull the band or cable down to your thighs with your lats.",
     [
@@ -276,7 +287,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   dumbbell_pullover: info(
     "dumbbell_pullover",
-    "owI6cCNOE7U",
+    "J_74kZp0q-Y",
     "Dumbbell Pullover form video",
     "Lie on a bench, hold the dumbbell with both hands, and lower it behind your head while keeping a slight bend in the elbows.",
     [
@@ -287,7 +298,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   band_pullover: info(
     "band_pullover",
-    "MpvDvxJPzW8",
+    "3bN9vLzYmE8",
     "Band Pullover form video",
     "Anchor a band overhead, keep your arms long, and pull it down in a smooth arc toward your hips.",
     [
@@ -298,7 +309,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   dumbbell_shrug: info(
     "dumbbell_shrug",
-    "Mg6kC6TJa4Q",
+    "g6qbq4a1Ym0",
     "Dumbbell Shrug form video",
     "Hold dumbbells at your sides, shrug your shoulders straight up, and lower them under control.",
     [
@@ -309,7 +320,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   barbell_shrug: info(
     "barbell_shrug",
-    "Vjc4zN0Ixyo",
+    "f_765Y3a4T0",
     "Barbell Shrug form video",
     "Grab the bar with a shoulder-width grip, shrug the shoulders up, and lower under control.",
     [
@@ -320,7 +331,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   band_shrug: info(
     "band_shrug",
-    "zNL5e4n0BsQ",
+    "1G4h8bN1X00",
     "Band Shrug form video",
     "Stand on the band and shrug your shoulders up, keeping your arms straight and the band taut.",
     [
@@ -331,7 +342,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   face_pull: info(
     "face_pull",
-    "rep-qVOkqsqKj5E",
+    "V8dZ3_L1aU4",
     "Cable/Band Face Pull form video",
     "Pull the rope or band toward your face with elbows high and shoulders back. Keep your wrists straight.",
     [
@@ -342,7 +353,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   prone_y_raise: info(
     "prone_y_raise",
-    "PYaW0cz4XM4",
+    "m2oM2LzY2_0",
     "Prone Y Raise form video",
     "Lie face down and raise your arms overhead in a Y shape while keeping your thumbs up and shoulder blades squeezed.",
     [
@@ -353,7 +364,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   hanging_leg_raise: info(
     "hanging_leg_raise",
-    "xbkr8rB5WA4",
+    "hdng3Nm1x_E",
     "Hanging Leg Raise form video",
     "Hang from a bar, keep your legs straight or slightly bent, and lift them until they are parallel to the ground.",
     [
@@ -364,7 +375,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   plank: info(
     "plank",
-    "ASdvN_XEl50",
+    "pSHjTRCQxIw",
     "Plank form video",
     "Hold a straight line from head to heels, keep your core tight, and avoid letting your hips sag or rise.",
     [
@@ -375,7 +386,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   bicycle_crunch: info(
     "bicycle_crunch",
-    "9qILvZBqD2k",
+    "9FGilxCbdz8",
     "Bicycle Crunch form video",
     "Lie on your back, alternate bringing opposite elbow to opposite knee, and keep your lower back pressed to the floor.",
     [
@@ -386,7 +397,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   situp: info(
     "situp",
-    "jDSKFR7dvkc",
+    "jDopI_j8B4w",
     "Sit-Up form video",
     "Lie with knees bent, curl your upper body toward your knees, and lower back down with control.",
     [
@@ -397,7 +408,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   pallof_press: info(
     "pallof_press",
-    "YhHyJQZmLhw",
+    "5_G1S3s1cR8",
     "Band Pallof Press form video",
     "Stand sideways to the band, press it straight out in front of your chest, and resist rotation with your core.",
     [
@@ -408,7 +419,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   farmers_carry: info(
     "farmers_carry",
-    "6tZQlMkB_-8",
+    "Fkzk_RqlYig",
     "Farmer's Carry form video",
     "Hold heavy weights in both hands, stand tall, and walk with controlled steps while keeping your shoulders down.",
     [
@@ -419,7 +430,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   brisk_walk: info(
     "brisk_walk",
-    "MdvKKvlp0aI",
+    "eO2fN7oR5v0",
     "Brisk Walk form video",
     "Walk at a quick pace with tall posture, long strides, and an engaged core.",
     [
@@ -430,7 +441,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   dumbbell_curl: info(
     "dumbbell_curl",
-    "ykq1H6jOrmE",
+    "sAq_ocpRh_I",
     "Dumbbell Curl form video",
     "Keep your elbows pinned to your sides and curl the dumbbells with control. Lower slowly to maintain tension.",
     [
@@ -441,7 +452,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   band_curl: info(
     "band_curl",
-    "dLF6EFZ4A4U",
+    "qP83B2N9_1A",
     "Band Curl form video",
     "Stand on the band and curl it up with controlled motion. Keep your elbows fixed and avoid leaning back.",
     [
@@ -452,7 +463,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   chinup: info(
     "chinup",
-    "6bvTCvmYIzs",
+    "bM38f2V_2E0",
     "Chin-Up form video",
     "Use a close grip, pull yourself up until your chin clears the bar, and lower with control.",
     [
@@ -463,7 +474,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   triceps_pushdown: info(
     "triceps_pushdown",
-    "YwoVhQzpvO4",
+    "2-LAMcpzODU",
     "Triceps Pushdown form video",
     "Keep your elbows locked at your sides and extend your arms downward until your triceps are fully contracted.",
     [
@@ -474,7 +485,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   overhead_extension: info(
     "overhead_extension",
-    "QJ7fupRKaVs",
+    "_gsUck-7M74",
     "Overhead Dumbbell Extension form video",
     "Keep your elbows pointing forward, lower the dumbbell behind your head, and extend your arms overhead while bracing your core.",
     [
@@ -485,7 +496,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   band_pushdown: info(
     "band_pushdown",
-    "r8M4Z66bKNY",
+    "4A1b02s9K0M",
     "Band Triceps Pushdown form video",
     "Anchor the band overhead, keep your elbows tucked, and press down until your arms are straight.",
     [
@@ -496,7 +507,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   diamond_pushup: info(
     "diamond_pushup",
-    "L13Gw2s9PEA",
+    "J0DnG1_S92I",
     "Diamond Push-Up form video",
     "Place your hands close together in a diamond shape, keep your elbows close to your body, and lower your chest with control.",
     [
@@ -507,7 +518,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   lateral_raise: info(
     "lateral_raise",
-    "q3-mZ0wKRTQ",
+    "3VcKaXpzqRo",
     "Dumbbell Lateral Raise form video",
     "Raise the dumbbells out to the sides to shoulder height with a slight bend in the elbows. Keep the motion controlled.",
     [
@@ -518,7 +529,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   band_lateral_raise: info(
     "band_lateral_raise",
-    "wy7VZvXcHlI",
+    "p4v1E_0sP7Y",
     "Band Lateral Raise form video",
     "Stand on the band and raise your arms out to the sides, keeping tension on the band from start to finish.",
     [
@@ -529,7 +540,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   hip_thrust: info(
     "hip_thrust",
-    "xDmXu6Z_6tw",
+    "EF7jX6CiMmg",
     "Barbell Hip Thrust form video",
     "Drive your hips upward with your feet planted, squeeze your glutes at the top, and keep your chin tucked.",
     [
@@ -540,7 +551,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   dumbbell_hip_thrust: info(
     "dumbbell_hip_thrust",
-    "Vgf-irvEwWw",
+    "m5L20eFf_70",
     "Dumbbell Hip Thrust form video",
     "Hold a dumbbell or weight across your hips, drive upward through your heels, and squeeze your glutes at the top.",
     [
@@ -551,7 +562,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   glute_bridge: info(
     "glute_bridge",
-    "fDvCRaFaX1s",
+    "Q_s80m2O_E0",
     "Glute Bridge form video",
     "Lie on your back with knees bent, drive your hips up toward the ceiling, and squeeze your glutes at the top.",
     [
@@ -562,7 +573,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   band_hip_thrust: info(
     "band_hip_thrust",
-    "Sp_dJ-0fY4I",
+    "x20aO_N8M8",
     "Band Hip Thrust form video",
     "Place the band across your hips, drive upward with your feet planted, and squeeze your glutes.",
     [
@@ -573,7 +584,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   leg_curl: info(
     "leg_curl",
-    "1G2rHkbirFI",
+    "1Tq3QdYUuHs",
     "Leg Curl Machine form video",
     "Lie face down, curl your legs up toward your glutes, and lower with control.",
     [
@@ -584,7 +595,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   band_leg_curl: info(
     "band_leg_curl",
-    "O4sH4k5zNUo",
+    "88-0_fU3Z0M",
     "Band Leg Curl form video",
     "Anchor the band around one ankle, lie face down, and curl your leg toward your glutes.",
     [
@@ -595,7 +606,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   nordic_curl_negative: info(
     "nordic_curl_negative",
-    "2gElVpkNjJo",
+    "xTk44rDTpAs",
     "Nordic Curl Negative form video",
     "Kneel with feet anchored, lower yourself forward using hamstring strength, and catch yourself with hands.",
     [
@@ -606,7 +617,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   standing_calf_raise: info(
     "standing_calf_raise",
-    "w_pTELSAh7Q",
+    "gwLzBJYoWHA",
     "Standing Calf Raise form video",
     "Stand tall, drive up onto the balls of your feet, and lower with control.",
     [
@@ -617,7 +628,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   band_calf_raise: info(
     "band_calf_raise",
-    "khTT5NyAXHs",
+    "m81x02E39aE",
     "Band Calf Raise form video",
     "Stand on the band and drive up on your toes against the resistance.",
     [
@@ -628,7 +639,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   wrist_curl: info(
     "wrist_curl",
-    "YRX3dVY_gCU",
+    "9m2Fp2xWp3o",
     "Dumbbell Wrist Curl form video",
     "Support your forearm on your lap with dumbbell in hand, curl upward at the wrist.",
     [
@@ -639,7 +650,7 @@ export const EXERCISE_FORM_INFO: Record<string, ExerciseFormInfo> = {
   ),
   dead_hang: info(
     "dead_hang",
-    "4xOGML7_cFA",
+    "4L7aN3m2M_0",
     "Dead Hang form video",
     "Grip the bar and hang with straight arms while keeping your shoulders packed down.",
     [
