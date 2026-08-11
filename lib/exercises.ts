@@ -67,23 +67,13 @@ export const EXERCISES: ExerciseDef[] = [
   { id: "farmers_carry", name: "Farmer's Carry", muscleGroup: "forearms", secondaryMuscles: ["core"], pattern: "carry", isAccessory: true, requiredEquipment: ["dumbbells", "full_gym"], swapGroup: "loaded_carry", difficulty: "beginner" },
   { id: "brisk_walk", name: "Brisk Walk", muscleGroup: "calves", pattern: "cardio", isAccessory: false, requiredEquipment: ["bodyweight_only"], swapGroup: "steady_cardio", difficulty: "new" },
   { id: "cardio_choice_20min", name: "20-Minute Cardio (Your Choice)", muscleGroup: "calves", pattern: "cardio", isAccessory: false, requiredEquipment: ["bodyweight_only"], swapGroup: "steady_cardio", difficulty: "new" },
-  { id: "sprint_60m", name: "60m Sprint", muscleGroup: "calves", pattern: "cardio", isAccessory: false, requiredEquipment: ["bodyweight_only"], swapGroup: "sprint_intervals", difficulty: "beginner" },
-  { id: "sprint_100m", name: "100m Sprint", muscleGroup: "calves", pattern: "cardio", isAccessory: false, requiredEquipment: ["bodyweight_only"], swapGroup: "sprint_intervals", difficulty: "intermediate" },
-  { id: "mile_run_1", name: "1 Mile Run", muscleGroup: "calves", pattern: "cardio", isAccessory: false, requiredEquipment: ["bodyweight_only"], swapGroup: "distance_run", difficulty: "beginner" },
-  { id: "mile_run_2", name: "2 Mile Run", muscleGroup: "calves", pattern: "cardio", isAccessory: false, requiredEquipment: ["bodyweight_only"], swapGroup: "distance_run", difficulty: "advanced", requiresExperience: "advanced" },
-  { id: "mile_run_3", name: "3 Mile Run", muscleGroup: "calves", pattern: "cardio", isAccessory: false, requiredEquipment: ["bodyweight_only"], swapGroup: "distance_run", difficulty: "advanced", requiresExperience: "advanced" },
-  { id: "mile_run_4", name: "4 Mile Run", muscleGroup: "calves", pattern: "cardio", isAccessory: false, requiredEquipment: ["bodyweight_only"], swapGroup: "distance_run", difficulty: "advanced", requiresExperience: "advanced" },
-  { id: "mile_run_5", name: "5 Mile Run", muscleGroup: "calves", pattern: "cardio", isAccessory: false, requiredEquipment: ["bodyweight_only"], swapGroup: "distance_run", difficulty: "advanced", requiresExperience: "advanced" },
-
-  // ---- Running / cardio (Groq-selectable conditioning work) ----
-  // reps semantics for this group: sprint_60m/sprint_100m = 1 (each rep is one sprint;
-  // sets is the sprint count), mile_run = always 1 (one mile), long_distance_run = miles
-  // (2-5, gated to advanced runners only), cardio_choice = minutes (~20).
   { id: "sprint_60m", name: "60m Sprint", muscleGroup: "quads", secondaryMuscles: ["hamstrings", "calves"], pattern: "cardio", isAccessory: false, requiredEquipment: ["bodyweight_only"], swapGroup: "sprint_intervals", difficulty: "beginner" },
   { id: "sprint_100m", name: "100m Sprint", muscleGroup: "quads", secondaryMuscles: ["hamstrings", "calves"], pattern: "cardio", isAccessory: false, requiredEquipment: ["bodyweight_only"], swapGroup: "sprint_intervals", difficulty: "intermediate" },
-  { id: "mile_run", name: "1 Mile Run", muscleGroup: "calves", secondaryMuscles: ["quads", "hamstrings"], pattern: "cardio", isAccessory: false, requiredEquipment: ["bodyweight_only"], swapGroup: "distance_run", difficulty: "beginner" },
-  { id: "long_distance_run", name: "2-5 Mile Run", muscleGroup: "calves", secondaryMuscles: ["quads", "hamstrings"], pattern: "cardio", isAccessory: false, requiredEquipment: ["bodyweight_only"], swapGroup: "distance_run", difficulty: "advanced" },
-  { id: "cardio_choice", name: "20-Minute Cardio (Your Choice)", muscleGroup: "calves", pattern: "cardio", isAccessory: false, requiredEquipment: ["bodyweight_only"], swapGroup: "steady_cardio", difficulty: "new" },
+  { id: "mile_run_1", name: "1 Mile Run", muscleGroup: "calves", secondaryMuscles: ["quads", "hamstrings"], pattern: "cardio", isAccessory: false, requiredEquipment: ["bodyweight_only"], swapGroup: "distance_run", difficulty: "beginner" },
+  { id: "mile_run_2", name: "2 Mile Run", muscleGroup: "calves", secondaryMuscles: ["quads", "hamstrings"], pattern: "cardio", isAccessory: false, requiredEquipment: ["bodyweight_only"], swapGroup: "distance_run", difficulty: "advanced", requiresExperience: "advanced" },
+  { id: "mile_run_3", name: "3 Mile Run", muscleGroup: "calves", secondaryMuscles: ["quads", "hamstrings"], pattern: "cardio", isAccessory: false, requiredEquipment: ["bodyweight_only"], swapGroup: "distance_run", difficulty: "advanced", requiresExperience: "advanced" },
+  { id: "mile_run_4", name: "4 Mile Run", muscleGroup: "calves", secondaryMuscles: ["quads", "hamstrings"], pattern: "cardio", isAccessory: false, requiredEquipment: ["bodyweight_only"], swapGroup: "distance_run", difficulty: "advanced", requiresExperience: "advanced" },
+  { id: "mile_run_5", name: "5 Mile Run", muscleGroup: "calves", secondaryMuscles: ["quads", "hamstrings"], pattern: "cardio", isAccessory: false, requiredEquipment: ["bodyweight_only"], swapGroup: "distance_run", difficulty: "advanced", requiresExperience: "advanced" },
 
   // ---- Biceps (isolation) ----
   { id: "dumbbell_curl", name: "Dumbbell Curl", muscleGroup: "biceps", pattern: "isolation", isAccessory: true, requiredEquipment: ["dumbbells"], swapGroup: "biceps_curl", difficulty: "new" },
