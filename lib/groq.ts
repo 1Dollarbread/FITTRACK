@@ -17,7 +17,11 @@ import {
 } from "./programGenerator";
 
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
-const GROQ_MODEL = "llama-3.3-70b-versatile";
+// llama-3.3-70b-versatile was deprecated by Groq on 2026-06-17 and fully
+// decommissioned by 2026-08 — every request to it now fails, which is why
+// the AI Coach was silently falling back to the local generator every time.
+// openai/gpt-oss-120b is Groq's recommended replacement (JSON mode + tool use).
+const GROQ_MODEL = "openai/gpt-oss-120b";
 
 let groqKeyIndex = 0;
 
@@ -104,20 +108,21 @@ function extractJson(raw: string): unknown {
   }
 }
 
-/** Distance running is capped at 1 mile unless the athlete is an advanced runner. */
+/**
+ * Multi-mile runs (mile_run_2..5) are capped to advanced athletes via
+ * requiresExperience on the exercise definition itself — this is the single
+ * source of truth for that gate; sanitizeExercise just enforces it.
+ */
 function sanitizeExercise(raw: unknown, experienceLevel: ExperienceLevel): PrescribedExercise | null {
   if (!raw || typeof raw !== "object") return null;
   const e = raw as Record<string, unknown>;
-  let exerciseId = String(e.exerciseId ?? "");
+  const exerciseId = String(e.exerciseId ?? "");
   const def = findExercise(exerciseId);
   if (!def) return null;
   // Hard gate: Groq is told not to prescribe e.g. multi-mile runs below the
   // required experience level, but never trust the LLM output alone here.
   if (def.requiresExperience && experienceRank(experienceLevel) < experienceRank(def.requiresExperience)) {
     return null;
-  }
-  if (exerciseId === "long_distance_run" && experienceLevel !== "advanced") {
-    exerciseId = "mile_run";
   }
 
   const sets = Number(e.sets);
@@ -126,8 +131,11 @@ function sanitizeExercise(raw: unknown, experienceLevel: ExperienceLevel): Presc
   let reps = Number(e.reps);
   if (!Number.isFinite(sets) || !Number.isFinite(reps)) return null;
 
-  if (exerciseId === "mile_run") reps = 1;
-  else if (exerciseId === "long_distance_run") reps = Math.max(2, Math.min(5, Math.round(reps)));
+  // Cardio distance/duration lives in the exercise name itself (e.g. "3 Mile
+  // Run", "20-Minute Cardio (Your Choice)") — reps is always 1 continuous
+  // bout. Sprints are the one exception: reps is 1 per sprint and `sets`
+  // carries the sprint count, which the generic clamp below already covers.
+  if (def.pattern === "cardio") reps = 1;
   else reps = Math.max(1, Math.min(50, Math.round(reps)));
 
   return {
@@ -231,12 +239,7 @@ Rules:
 - If the athlete has onboarding answers about deadlines, success, preferred time, training history, activities, or enjoyment, weave those into the plan as explicit emphasis without losing the base goals.
 - Prefer a slightly fuller template when the athlete has 4+ training days, aiming for 6-8 sessions when the user has 6 days per week and at least 6 sessions for a 6-day split.
 - Bodyweight-only moves should have targetWeightKg: 0.
-- Running/cardio: use pattern=cardio exercises (sprint_60m, sprint_100m, mile_run, long_distance_run, cardio_choice, brisk_walk) for conditioning work wherever it fits — especially for fat_loss/endurance goals, or when the athlete's notes mention running/conditioning. Guidance per exercise:
-  - sprint_60m / sprint_100m: reps is always 1 (each rep is one sprint); sets is the number of sprints (e.g. 6 sets of 100m).
-  - mile_run: reps is always 1 (exactly one mile).
-  - long_distance_run: reps is miles, 2-5 — ONLY use this exercise if experienceLevel is "advanced". For any other experience level use mile_run or brisk_walk instead.
-  - cardio_choice: an open-modality steady-state cardio block (walking, biking, rowing, etc. — athlete's choice); reps is minutes, default around 20.
-  - sets for mile_run, long_distance_run, and cardio_choice should be 1 (one continuous bout, not multiple sets).
+- Running/cardio: prescribe pattern=cardio work wherever it fits — especially for fat_loss/endurance goals, or when the athlete's notes mention running/conditioning. Use brisk_walk, cardio_choice_20min, sprint_60m, sprint_100m, or mile_run_1 through mile_run_5, following the cardio rules above (mile_run_2-5 only for "advanced" experienceLevel).
 - Return JSON only.
 - Respond with JSON shape: {"weeklyTemplate":[{"focus":"string","exercises":[{"exerciseId":"id","sets":n,"reps":n,"targetWeightKg":n,"restSeconds":n}]}]}`,
         },
@@ -373,7 +376,7 @@ export async function adjustProgramWithGroq(params: {
   const hasText =
     Boolean(feedback?.wentWell?.trim()) || Boolean(feedback?.toImprove?.trim());
 
-  if (!hasText || !process.env.GROQ_API_KEY) {
+  if (!hasText || getGroqApiKeys().length === 0) {
     return localNext;
   }
 
@@ -388,7 +391,7 @@ Rules:
 - Apply feedback concretely (e.g. "shoulders too sore" → swap/reduce shoulder volume; "pullups felt easy" → add reps or a harder pull variation).
 - Cardio options are brisk_walk, cardio_choice_20min, sprint_60m, sprint_100m, and mile_run_1 through mile_run_5. Only use mile_run_2/3/4/5 (more than 1 mile) if profile.experienceLevel is exactly "advanced" — e.g. if a non-advanced athlete says running felt easy, progress them toward mile_run_1 or a sprint variant instead, never a longer mile_run.
 - Preserve progressive structure; do not wipe the whole plan unless feedback demands it.
-- Running/cardio (pattern=cardio: sprint_60m, sprint_100m, mile_run, long_distance_run, cardio_choice, brisk_walk) can be added, swapped in, or adjusted wherever it fits, e.g. "wants more conditioning" or "bored of the same cardio". long_distance_run (2-5 miles, reps=miles) is ONLY for experienceLevel "advanced" — use mile_run (reps always 1) for everyone else. cardio_choice is an open-modality steady-state block, reps=minutes (~20). sprint_60m/sprint_100m reps is always 1 per sprint, with sets as the sprint count.
+- Running/cardio (pattern=cardio: brisk_walk, cardio_choice_20min, sprint_60m, sprint_100m, mile_run_1 through mile_run_5) can be added, swapped in, or adjusted wherever it fits, e.g. "wants more conditioning" or "bored of the same cardio". mile_run_2/3/4/5 (more than 1 mile) are ONLY for experienceLevel "advanced" — use mile_run_1, cardio_choice_20min, or a sprint variant for everyone else. sprint_60m/sprint_100m reps is always 1 per sprint, with sets as the sprint count; all other cardio uses sets:1, reps:1.
 - Advance currentDayIndex to the next day (wrap to 0).
 - Respond with JSON: {"weeklyTemplate":[...],"coachNote":"short string explaining changes","isDeloadWeek":false,"deloadReason":null}`,
       },
@@ -576,7 +579,7 @@ export async function getSessionBriefingWithGroq(params: {
   const { profile, session, history, isDeloadWeek, deloadReason } = params;
   const fallback = localSessionBriefing(params);
 
-  if (!process.env.GROQ_API_KEY) {
+  if (getGroqApiKeys().length === 0) {
     return fallback;
   }
 
