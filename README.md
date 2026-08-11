@@ -43,7 +43,7 @@ Everything that makes this different from a static workout template is in
   pattern in a user's actual session history to anchor a tiny suggested habit
   to a real behavior, and only scales the goal up once a streak proves it's
   stuck (never before).
-- **`lib/groq.ts`** — the AI Coach, backed by Groq (`llama-3.3-70b-versatile`).
+- **`lib/groq.ts`** — the AI Coach, backed by Groq (`openai/gpt-oss-120b`).
   Builds the initial program (`generateProgramWithGroq`), reshapes it from
   post-workout feedback (`adjustProgramWithGroq`), and — right before a
   session starts — generates a short briefing (`getSessionBriefingWithGroq`):
